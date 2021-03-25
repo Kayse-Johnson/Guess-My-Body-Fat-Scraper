@@ -102,11 +102,11 @@ class Reddit_scraper:
                 elif w.find('kg')>=0:
                     n_w = float(w[0:-2])*2.20462
                     weight = round(n_w,2)
-                    l.remove(W)
+                    l.remove(w)
             #if the last number meets the following condition it becomes the age
             try:
-                if int(T[0])>10 and int(T[0])<55 and height!='null' and weight!='null':
-                    age = int(T[0])
+                if int(l[0])>10 and int(l[0])<55 and height!='null' and weight!='null':
+                    age = int(l[0])
             except:
                 pass
 
