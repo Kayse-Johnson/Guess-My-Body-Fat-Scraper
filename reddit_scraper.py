@@ -1,12 +1,14 @@
 import praw
 import requests
+from bs4 import BeautifulSoup
 import statistics as s
 import re
 import pandas as pd
-from time import time as t
+from time import time as t, sleep
 import missingno as msno
 from pprint import pprint
 import boto3
+import os
 class Reddit_scraper:
     def __init__(self, subreddit,bucket=None):
         '''initializes the attributes
@@ -55,8 +57,28 @@ class Reddit_scraper:
             age = None
             bf = None
             bf_list = []
+            url = submission.url
             #print(submission.title)
             # Output: the submission's title
+            if submission.url.find('jpg')<0:
+                page = requests.get(submission.url) # make a HTTP GET request to this website
+                while page.status_code==500:
+                    page = requests.get(submission.url)
+                soup = BeautifulSoup(page.content, 'html.parser')
+                if submission.url.find('https://www.reddit.com/gallery')>=0:
+                    img_data = str(soup.find_all('img', class_='_1dwExqTGJH2jnA-MYGkEL-')).replace('amp;','')
+                    url = re.search(r'https:\/\/preview.redd.it\/\S+s=[a-z,\d]+',img_data).group()
+                    print(url)
+                elif submission.url.find('https://imgur.com')>=0:
+                    img_data = str(soup.find_all('meta', attrs={'content':re.compile(r'https.+?\.jpg')})[0])
+                    url = re.search(r'https.+?\.jpg',img_data).group()
+                    print(url)
+                else:
+                    pass
+                print(page.status_code)
+                page.close()
+                #print(soup.prettify())
+                #print('the thingy is')
             #Try to find a M or F to indicate gender and assign the gender to that string, otherwise leave Gender as NaN
             try:
                 gender = re.search(r'M{1}|F{1}', submission.title).group().upper()
@@ -121,7 +143,6 @@ class Reddit_scraper:
             #print(submission.url)
             # Output: the URL the submission points to 
 
-
             #Iterate through the comments in the submission
             for top_level_comment in submission.comments:
                 #print(top_level_comment.body)
@@ -153,7 +174,7 @@ class Reddit_scraper:
                     'Height(ft)' : height,
                     'Weight(lbs)' : weight,
                     'bodyfat(%)' : bf,
-                    'URL' : submission.url
+                    'URL' : url
                 }
             except:
                 pass
@@ -207,7 +228,7 @@ class Reddit_scraper:
         #Create a new csv file with the cleaned data
         clean.to_csv('Clean_Body_Fat_Reddit_Data.csv', index=False)
 
-    def upload(self,bucket):
+    def upload_files(self,bucket):
         '''Uploads data files to the s3 bucket
         Parameters:
         argument : the name of the bucket the data is stored in
@@ -215,14 +236,84 @@ class Reddit_scraper:
         self.bucket = bucket
         s3 = boto3.resource('s3')
         # Print out bucket names
-        for bucket in s3.buckets.all():
-            print(bucket.name)
+        #for bucket in s3.buckets.all():
+            #print(bucket.name)
         # Upload the data files
-        data = open('Body_Fat_Reddit_Data.csv', 'rb')
-        s3.Bucket(self.bucket).put_object(Key='Dirty_bf.csv', Body=data)
+        try:
+            data = open('Body_Fat_Reddit_Data.csv', 'rb')
+            s3.Bucket(self.bucket).put_object(Key='Dirty_bf.csv', Body=data)
+        except:
+            print('Uploading dirty csv file to bucket failed...')
+            pass
         try:
             data = open('Clean_Body_Fat_Reddit_Data.csv', 'rb')
             s3.Bucket(self.bucket).put_object(Key='Clean_bf.csv', Body=data)
         except:
+            print('Uploading clean csv file to bucket failed...')
             pass
+
+    def upload_images(self,bucket):
+        '''Uploads data files to the s3 bucket
+        Parameters:
+        argument : the name of the bucket the data is stored in
+        '''
+        self.bucket = bucket
+        s3 = boto3.resource('s3')
+        # Print out bucket names
+        #for bucket in s3.buckets.all():
+            #print(bucket.name)
+        #Upload all the images in the folder to amazon s3
+        try:
+            for entries in os.listdir('img_folder/Dirty_images'):
+                key = 'Dirty/' + entries
+                entries = 'img_folder/Dirty_images/' + entries
+                data = open(entries, 'rb')
+                s3.Bucket(self.bucket).put_object(Key=key, Body=data)
+        except:
+            print('Upload to dirty images folder failed...')
+            pass
+        try:
+            for entries in os.listdir('img_folder/Clean_images'):
+                key = 'Clean/' + entries
+                entries = 'img_folder/Clean_images/' + entries
+                data = open(entries, 'rb')
+                s3.Bucket(self.bucket).put_object(Key=key, Body=data)
+        except:
+            print('Upload to clean images folder failed...')
+            pass
+
+    def download_file(self, src_url, local_destination):
+        response = requests.get(src_url)
+        with open(local_destination, 'wb+') as f:
+            f.write(response.content)
+
+    def download_images(self,file_choice=0):
+        file_ext = '.jpg'
+        valid={0,1}
+        if file_choice not in valid:
+            raise ValueError("results: file_choice must be one of %r." % valid)
+        if file_choice == 0:
+            file = 'Body_Fat_Reddit_Data.csv'
+            local_dest = 'C:/Users/Kayse/Project/web_scraper/img_folder/Dirty_images/'
+        else:
+            file = 'Clean_Body_Fat_Reddit_Data.csv'
+            local_dest = 'C:/Users/Kayse/Project/web_scraper/img_folder/Clean_images/'
         
+        df=pd.read_csv(file)
+        df = df[['URL','ID']]
+        for index, row in df['URL'].iteritems():
+            dest = local_dest + df[['ID']].iloc[index].values[0] + file_ext
+            self.download_file(row,dest)
+
+if __name__ == '__main__':
+    #Example code used to initialise the class and scrape data from
+    #the guess my bf subreddit
+
+    bf = Reddit_scraper('guessmybf')
+    #bf.bf_scraper(20)
+    #bf.cleaning()
+    bf.upload_files('kcdatabucket')
+    bf.upload_images('kcdatabucket')
+    #bf.download_images(1)
+
+    
