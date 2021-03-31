@@ -19,9 +19,9 @@ class Reddit_scraper:
 
         '''
         reddit=praw.Reddit(
-        client_id="In3tHnD0wHz8jQ",
-        client_secret="ophvkfmAaLZTe2L8MtSkO-qjZkH9wg",
-        user_agent="Kayse"
+        client_id="Your client ID",
+        client_secret="Your client secret key",
+        user_agent="Your user_agent"
         )
         # From the reddit object traverse to the following subreddit
         self.subreddit = reddit.subreddit(subreddit)
@@ -310,10 +310,10 @@ if __name__ == '__main__':
     #the guess my bf subreddit
 
     bf = Reddit_scraper('guessmybf')
-    #bf.bf_scraper(20)
-    #bf.cleaning()
-    bf.upload_files('kcdatabucket')
-    bf.upload_images('kcdatabucket')
-    #bf.download_images(1)
+    bf.bf_scraper(20)
+    bf.cleaning()
+    bf.upload_files('yourdatabucket')
+    bf.upload_images('yourdatabucket')
+    bf.download_images(1)
 
     
