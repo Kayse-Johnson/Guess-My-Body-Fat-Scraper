@@ -1,6 +1,6 @@
 # Guess my body fat scraper
 
-This project involves scraping data using the PRAW API to determine the bodyfats of users from their pictures. The data is scraped from the "guessmybf" subreddit and uploaded to Amaxon's S3 cloud storage service. Storing the data in a data lake is more reasonable than in a data warehouse as multiple different data types are scraped including image .jpg files. From the subreddit: the age, gender, name, submission id, bodyfat and URL of the picture are stored in a csv file.
+This project involves scraping data using the PRAW API to determine the bodyfats of users from their pictures. The data is scraped from the "guessmybf" subreddit and uploaded to Amazon's S3 cloud storage service. Storing the data in a data lake is more reasonable than in a data warehouse as multiple different data types are scraped including image .jpg files. From the subreddit: the age, gender, name, submission id, bodyfat and URL of the picture are stored in a csv file.
 
 The age, gender, name, height and weight for each submission are scraped directly from the title where possible. In the following picture one can see how the titles in the subreddit are meant to store all the relevant features.
 
