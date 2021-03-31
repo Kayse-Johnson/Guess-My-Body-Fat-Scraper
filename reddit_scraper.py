@@ -253,7 +253,7 @@ class Reddit_scraper:
             pass
 
     def upload_images(self,bucket):
-        '''Uploads data files to the s3 bucket
+        '''Uploads image files to the s3 bucket
         Parameters:
         argument : the name of the bucket the data is stored in
         '''
@@ -264,6 +264,7 @@ class Reddit_scraper:
             #print(bucket.name)
         #Upload all the images in the folder to amazon s3
         try:
+            #looks for all the entries in the following directory
             for entries in os.listdir('img_folder/Dirty_images'):
                 key = 'Dirty/' + entries
                 entries = 'img_folder/Dirty_images/' + entries
@@ -273,6 +274,7 @@ class Reddit_scraper:
             print('Upload to dirty images folder failed...')
             pass
         try:
+            #looks for all the entries in the following directory
             for entries in os.listdir('img_folder/Clean_images'):
                 key = 'Clean/' + entries
                 entries = 'img_folder/Clean_images/' + entries
@@ -283,11 +285,20 @@ class Reddit_scraper:
             pass
 
     def download_file(self, src_url, local_destination):
+        '''Downloads a file to a local destination
+        Parameters:
+        argument1 : the source url of the file to be downloaded
+        argument2 : the local destination the file  should be save in
+        '''
         response = requests.get(src_url)
         with open(local_destination, 'wb+') as f:
             f.write(response.content)
 
     def download_images(self,file_choice=0):
+         '''Downloads a set of images to a local destination
+        Parameters:
+        argument (int): Indicates whether the images should be saved from the dirty data set or clean dataset
+        '''
         file_ext = '.jpg'
         valid={0,1}
         if file_choice not in valid:
